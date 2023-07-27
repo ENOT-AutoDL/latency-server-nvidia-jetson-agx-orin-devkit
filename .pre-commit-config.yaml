@@ -1,0 +1,56 @@
+repos:
+- repo: https://github.com/psf/black
+  rev: 23.3.0
+  hooks:
+    - id: black
+- repo: https://github.com/PyCQA/isort
+  rev: 5.12.0
+  hooks:
+    - id: isort
+      args:
+        [
+          "--force-single-line-imports",
+          "--ensure-newline-before-comments",
+          "--line-length=120",
+        ]
+- repo: https://github.com/asottile/pyupgrade
+  rev: v3.8.0
+  hooks:
+    - id: pyupgrade
+- repo: https://github.com/PyCQA/docformatter
+  rev: v1.7.3
+  hooks:
+    - id: docformatter
+      additional_dependencies: [tomli]
+      args:
+        [
+          "--in-place",
+          "--config",
+          "pyproject.toml",
+        ]
+- repo: https://github.com/executablebooks/mdformat
+  rev: 0.7.16
+  hooks:
+  - id: mdformat
+    additional_dependencies:
+    - mdformat-gfm
+    - mdformat-black
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.4.0
+  hooks:
+    - id: check-yaml
+    - id: check-toml
+    - id: check-json
+    - id: check-ast
+    - id: fix-byte-order-marker
+    - id: end-of-file-fixer
+    - id: trailing-whitespace
+    - id: requirements-txt-fixer
+    - id: check-added-large-files
+    - id: check-case-conflict
+    - id: check-merge-conflict
+    - id: detect-private-key
+    - id: end-of-file-fixer
+    - id: detect-private-key
+    - id: no-commit-to-branch
+      args: ["-b=main"]
