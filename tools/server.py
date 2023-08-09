@@ -94,7 +94,7 @@ class MyServer(LatencyServer):
 
         return result
 
-    def get_engine_size(self, process_stdout):
+    def get_engine_size(self, process_stdout, eps=1e-7):
         start_ind = process_stdout.find("engine size:")
         stop_ind = process_stdout[start_ind:].find("MiB")
 
@@ -106,7 +106,7 @@ class MyServer(LatencyServer):
             )
 
         engine_size = floats[0]
-        return engine_size
+        return engine_size + eps
 
     def run_subprocess(self, command):
         print(f"Running '{command}'")
