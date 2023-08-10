@@ -216,7 +216,7 @@ def parse():
     parser.add_argument(
         "--threshold",
         type=float,
-        default=1.9,
+        default=1.5,
         help="Ratio of reference size (i.e. ONNX model size) to engine size to make sure we have a fp16 engine. Not used with '--fp32'",
     )
     parser.add_argument(
