@@ -74,7 +74,7 @@ To make sure that the engine is correct, we compare its size with the reference 
 FP32 engine size or ONNX size if `--compare-with-onnx` is passed.
 If the size of the built engine is too large, then it is incorrect and we automatically rebuild it.
 
-The measurement server uses `1.9` as a threshold on `reference_size / current_engine_size` value.
+The measurement server uses `1.5` as a threshold on `reference_size / current_engine_size` value.
 New engines will be generated until `reference_size / current_engine_size` becomes higher than the threshold. 
 This value can be changed using `--threshold` option.
-If you want to know the actual size ratio, please use `--verbose=1` argument.
+If you want to know the actual size ratio, please use `--verbosity-level 1` argument.
