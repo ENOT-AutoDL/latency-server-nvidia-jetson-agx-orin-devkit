@@ -37,9 +37,6 @@ The server gets a model in the ONNX format and measures its latency using `trtex
     --fp16
 ```
 
-> **_NOTE:_** There is also an option to build engines of FP32 precision.
-> Use `--fp32` argument for FP32 engines (`python tools/server.py --fp32`).
-
 > **_NOTE:_** If you pass a model with `QuantizeLinear` and `DequantizeLinear` layers to latency server, an engine with INT8 kernels will be automatically created.
 
 We get stable results with the following parameter values (default values for our measurements):
