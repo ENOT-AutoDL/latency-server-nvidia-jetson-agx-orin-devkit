@@ -1,2 +1,2 @@
-enot-latency-server==1.1.0
+enot-latency-server==1.2.0
 onnx
