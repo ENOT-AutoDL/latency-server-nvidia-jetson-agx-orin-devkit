@@ -20,7 +20,7 @@ class MyServer(LatencyServer):
         avgruns: int = 100,
         compare_with_onnx: bool = False,
         verbosity_level: int = 0,
-        threshold: float = 1.9,
+        threshold: float = 1.5,
     ):
         """
         Server ctor.
@@ -31,10 +31,10 @@ class MyServer(LatencyServer):
             Host name or IP address. Default value is '0.0.0.0'.
         port : int
             Port. Default value is 15003.
-        trtexec_path: str
+        trtexec_path : str
             Path to trtexec binaries
-        fp32: bool
-            Whether to use fp32 engine for inference instead of fp16.
+        fp32 : bool
+            Whether to use a FP32 engine for inference instead of FP16.
             Default is False.
         warmup : int
             Run for N milliseconds to warmup before measuring performance.
@@ -46,13 +46,13 @@ class MyServer(LatencyServer):
             Report performance measurements averaged over 'avgruns' consecutive iterations
             Default is 100.
         compare_with_onnx : bool
-            Whether to compare fp16 engine size with ONNX model size. If false, compares with fp32 engine size.
+            Whether to compare FP16 engine size with ONNX model size. If false, compares with FP32 engine size.
             Not used when 'fp32' is False.
             Default is False.
         threshold : float
-            Ratio of reference size (i.e. ONNX model size) to engine size to make sure we have a fp16 engine.
+            Ratio of reference size (i.e. ONNX model size) to engine size to make sure we have a FP16 engine.
             Not used when 'fp32' is False.
-            Default is 1.9
+            Default is 1.5
         verbosity_level : int
             Verbosity level.
             Choices: 0 - stderr, 1 - show measurement results, 2 - both stderr and measurement results.
@@ -61,6 +61,7 @@ class MyServer(LatencyServer):
         """
         super().__init__(host=host, port=port)
         self.trtexec_path = trtexec_path
+
         self.fp32 = fp32
         self.warmup = warmup
         self.iterations = iterations
@@ -128,7 +129,6 @@ class MyServer(LatencyServer):
         ----------
         model : bytes
             Model which latency we want to measure.
-
         Returns
         -------
         Dict[str, float]
@@ -142,11 +142,19 @@ class MyServer(LatencyServer):
         base_command = f"{self.trtexec_path} --onnx=model.onnx {engine_options}"
         run_options = f"--warmUp={self.warmup} --iterations={self.iterations} --avgRuns={self.avgruns}"
 
-        if self.fp32:
+        if _has_quant_dequant_node(model):
+            print("Found quant-dequant nodes, INT8 kernels usage is enabled.")
+
+            if self.fp32:
+                command_int8 = f"{base_command} --int8 {run_options}"
+            else:  # FP16
+                command_int8 = f"{base_command} --int8 --fp16 {run_options}"
+
+            command_stdout, command_stderr = self.run_subprocess(command_int8)
+        elif self.fp32:
             command_fp32 = f"{base_command} {run_options}"
             command_stdout, command_stderr = self.run_subprocess(command_fp32)
-
-        else:  # fp16
+        else:  # FP16
             command_fp32 = base_command  # with default run options because we only need engine size
             command_fp16 = f"{base_command} --fp16 {run_options}"
 
@@ -161,8 +169,8 @@ class MyServer(LatencyServer):
 
             engine_size = reference_size
 
-            # Sometimes trtexec creates engine in fp32 even though we demand fp16.
-            # To make sure we get fp16 engine, we compare its size with reference size.
+            # Sometimes trtexec creates engine in FP32 even though we demand FP16.
+            # To make sure we get FP16 engine, we compare its size with reference size.
             while reference_size / engine_size < self.threshold:  # Rebuild an engine if it is too large.
                 command_stdout, command_stderr = self.run_subprocess(command_fp16)
                 engine_size = self.get_engine_size(command_stdout)
@@ -191,40 +199,46 @@ def parse():
     )
     parser.add_argument("--port", type=int, default=15003, help="Server port. Default is 15003")
     parser.add_argument(
-        "--fp32", action="store_true", help="Whether to build a fp32 engine. Builds fp16 engine by default."
+        "--fp32", action="store_true", help="Whether to build a FP32 engine. Builds FP16 engine by default."
     )
     parser.add_argument(
-        "--warmup", type=int, default=10000, help="Run for 'warmup' milliseconds to warmup before measuring performance"
+        "--warmup",
+        type=int,
+        default=10000,
+        help="Run for 'warmup' milliseconds to warmup before measuring performance. Default is 10000.",
     )
     parser.add_argument(
         "--iterations",
         type=int,
         default=10000,
-        help="Run at least 'iterations' inference iterations for latency measurement",
+        help="Run at least 'iterations' inference iterations for latency measurement. Default is 10000.",
     )
     parser.add_argument(
         "--avgruns",
         type=int,
         default=100,
-        help="Report performance measurements averaged over 'avgruns' consecutive iterations",
+        help="Report performance measurements averaged over 'avgruns' consecutive iterations. Default is 100.",
     )
     parser.add_argument(
         "--compare-with-onnx",
         action="store_true",
-        help="Use ONNX model size as a reference to compare with fp16 engine size. By default, uses fp32 engine size as a reference. Not used with '--fp32'",
+        help="Use ONNX model size as a reference to compare with FP16 engine size. "
+        "By default, uses FP32 engine size as a reference. Not used with '--fp32'",
     )
     parser.add_argument(
         "--threshold",
         type=float,
         default=1.5,
-        help="Ratio of reference size (i.e. ONNX model size) to engine size to make sure we have a fp16 engine. Not used with '--fp32'",
+        help="Ratio of reference size (i.e. ONNX model size) to engine size to make sure we have a FP16 engine. "
+        "Not used with '--fp32'. Default is 1.5",
     )
     parser.add_argument(
         "--verbosity-level",
         type=int,
         default=0,
         choices=[0, 1, 2],
-        help="Choices: 0 - stderr, 1 - show measurement results, 2 - both stderr and measurement results. Default is 0",
+        help="Choices: 0 - stderr, 1 - show measurement results, 2 - both stderr and measurement results. "
+        "Default is 0.",
     )
 
     return parser.parse_args()
@@ -246,6 +260,15 @@ def main():
         threshold=args.threshold,
     )
     server.run()
+
+
+def _has_quant_dequant_node(onnx_model: onnx.ModelProto) -> bool:
+    """Checks if ONNX model has quant-dequant nodes."""
+    for node in onnx_model.graph.node:
+        if node.op_type in ("QuantizeLinear", "DequantizeLinear"):
+            return True
+
+    return False
 
 
 if __name__ == "__main__":
