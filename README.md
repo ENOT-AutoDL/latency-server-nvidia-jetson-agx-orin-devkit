@@ -1,6 +1,6 @@
-# Latency Server Nvidia Jetson AGX Orin
+# Latency Server NVIDIA Jetson AGX Orin
 
-This README shows how to run latency measurements on Nvidia Jetson AGX Orin.
+This README shows how to run latency measurements on NVIDIA Jetson AGX Orin.
 
 Measurement server is based on:
 
@@ -37,9 +37,10 @@ The server gets a model in the ONNX format and measures its latency using `trtex
     --fp16
 ```
 
-> **_NOTE:_** There is also an option to build engines of FP32 or INT8 precision.
-> Use `--fp32` argument for FP32 engines.
-> An engine with INT8 kernels will be automatically created if you pass a model with `QuantizeLinear` and `DequantizeLinear` layers to latency server.
+> **_NOTE:_** There is also an option to build engines of FP32 precision.
+> Use `--fp32` argument for FP32 engines (`python tools/server.py --fp32`).
+
+> **_NOTE:_** If you pass a model with `QuantizeLinear` and `DequantizeLinear` layers to latency server, an engine with INT8 kernels will be automatically created.
 
 We get stable results with the following parameter values (default values for our measurements):
 
@@ -76,4 +77,4 @@ If the size of the built engine is too large, then it is incorrect, and we autom
 The measurement script uses `1.5` as a default threshold on `reference size / current engine size` value.
 New engines will be generated until `reference size / current engine size` becomes higher than the threshold.
 This value can be changed using `--threshold` option.
-If you want to know the actual size ration, use `--verbosity-level=1`.
+If you want to know the actual size ratio, use `--verbosity-level=1`.
