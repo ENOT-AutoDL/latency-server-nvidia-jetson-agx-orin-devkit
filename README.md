@@ -71,7 +71,8 @@ TensorRT sometimes builds an FP32 engine even if we pass `--fp16` flag to `trtex
 To make sure that the engine is correct, we compare its size with the reference size: FP32 engine size or ONNX model size if `--compare-with-onnx` is passed.
 If the size of the built engine is too large, then it is incorrect, and we automatically rebuild it.
 
-The measurement script uses `1.5` as a default threshold on `reference size / current engine size` value.
-New engines will be generated until `reference size / current engine size` becomes higher than the threshold.
-This value can be changed using `--threshold` option.
-If you want to know the actual size ratio, use `--verbosity-level=1`.
+The measurement script uses `1.5` as a default threshold on `reference size / current engine size` value (this value can be changed using `--threshold` option).
+Latency server tries to build a correct engine for `--n-trials` times (20 by default) until `reference size / current engine size` becomes higher than the threshold.
+
+If `trtexec` has failed to create a correct engine for `n_trials` times, latency server returns `None` as model latency.
+If you want to know the actual `reference size / current engine size` ratio, use `--verbosity-level=1`.
